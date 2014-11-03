@@ -5,7 +5,7 @@ import time
 import random
 from copy import deepcopy
 
-key = 'F6B38B6772012F11E1BB68FCF696140A'
+key = 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX'
 getOwnedGames = 'http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key='
 getFriendsList = 'http://api.steampowered.com/ISteamUser/GetFriendList/v0001/?key='
 getSummaries = 'http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key='
