@@ -31,6 +31,12 @@ def get_games(steamid):
             count -= 1
             queue.put(current_user)
             continue
+
+        except urllib2.HTTPError, e:
+            print "HTTPError: ", e.code
+            count -= 1
+            queue.put(current_user)
+            continue
         
         if summaries['response']['players'][0]['communityvisibilitystate'] == 3:
             try:
@@ -40,15 +46,26 @@ def get_games(steamid):
                 count -= 1
                 queue.put(current_user)
                 continue
+            except urllib2.HTTPError, e:
+                print "HTTPError: ", e.code
+                count -= 1
+                queue.put(current_user)
+                continue
             
             user_owned_games[current_user] = owned_games
-            dictionary_file.write(str(current_user) + str(owned_games) + '\n')
+            dictionary_file.write(str(current_user) + ' ' + str(owned_games) + '\n')
             dictionary_file.close()
 
             try:
                 friend_list = json.loads(urllib2.urlopen(getFriendsList + key + '&steamid=' + current_user + '&format=json', timeout = 10).read())
             except urllib2.URLError, e:
                 print "URLError: ", e.reason
+                count -= 1
+                queue.put(current_user)
+                continue
+
+            except urllib2.HTTPError, e:
+                print "HTTPError: ", e.code
                 count -= 1
                 queue.put(current_user)
                 continue
@@ -68,6 +85,15 @@ def get_games(steamid):
 
 
 def main():
+    try:
+        queue_file = open('queue.txt', 'r')
+
+        for line in queue_file:
+            queue.put(line)
+
+        queue_file.close()
+    except IOError, e:
+        pass
     get_games('76561198053212280')
 
 main()
