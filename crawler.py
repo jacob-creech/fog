@@ -3,9 +3,10 @@ import json
 import Queue
 import time
 import random
-from copy import deepcopy
 
-key = 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX'
+api_key = open('api_key.txt')
+key = api_key.read()
+api_key.close()
 getOwnedGames = 'http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key='
 getFriendsList = 'http://api.steampowered.com/ISteamUser/GetFriendList/v0001/?key='
 getSummaries = 'http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key='
@@ -17,7 +18,7 @@ user_owned_games = {}
 def get_games(steamid):
     queue.put(steamid)
     counter = 0
-    while not queue.empty() and counter < 1:
+    while not queue.empty() and counter < 3:
         dictionary_file = open('dictionary.txt', 'a')
         queue_file = open('queue.txt', 'w')
         current_user = str(queue.get())
