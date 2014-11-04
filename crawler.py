@@ -28,13 +28,13 @@ def get_games(steamid):
             summaries = json.loads(urllib2.urlopen(getSummaries + key + '&steamids=' + current_user + '&format=json', timeout = 10).read())
         except urllib2.URLError, e:
             print "URLError: ", e.reason
-            count -= 1
+            counter -= 1
             queue.put(current_user)
             continue
 
         except urllib2.HTTPError, e:
             print "HTTPError: ", e.code
-            count -= 1
+            counter -= 1
             queue.put(current_user)
             continue
         
@@ -43,12 +43,12 @@ def get_games(steamid):
                 owned_games = json.loads(urllib2.urlopen(getOwnedGames + key + '&steamid=' + current_user + '&include_played_free_games=1&format=json', timeout = 10).read())
             except urllib2.URLError, e:
                 print "URLError: ", e.reason
-                count -= 1
+                counter -= 1
                 queue.put(current_user)
                 continue
             except urllib2.HTTPError, e:
                 print "HTTPError: ", e.code
-                count -= 1
+                counter -= 1
                 queue.put(current_user)
                 continue
             
@@ -60,13 +60,13 @@ def get_games(steamid):
                 friend_list = json.loads(urllib2.urlopen(getFriendsList + key + '&steamid=' + current_user + '&format=json', timeout = 10).read())
             except urllib2.URLError, e:
                 print "URLError: ", e.reason
-                count -= 1
+                counter -= 1
                 queue.put(current_user)
                 continue
 
             except urllib2.HTTPError, e:
                 print "HTTPError: ", e.code
-                count -= 1
+                counter -= 1
                 queue.put(current_user)
                 continue
             
@@ -94,6 +94,7 @@ def main():
         queue_file.close()
     except IOError, e:
         pass
+    #seed is duplicated
     get_games('76561198053212280')
 
 main()
