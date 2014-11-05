@@ -17,7 +17,7 @@ user_owned_games = {}
 
 def get_games(steamid):
     queue.put(steamid)
-    counter = 0
+    counter = len(user_set)
     while not queue.empty():
         dictionary_file = open('dictionary.txt', 'a')
         
@@ -87,14 +87,18 @@ def get_games(steamid):
 def main():
     try:
         queue_file = open('queue.txt', 'r')
-
         for line in queue_file:
-            queue.put(line)
-
+            queue.put(line[:17])
         queue_file.close()
+
+        global user_set
+        dict_file = open('dictionary.txt', 'r')
+        for line in dict_file:
+            user_set += [line[:17]]
+        dict_file.close()
     except IOError, e:
         pass
     #seed is duplicated
-    get_games('76561198053212280')
+    get_games('76561198129321156')
 
 main()
