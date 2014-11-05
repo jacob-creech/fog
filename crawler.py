@@ -37,6 +37,11 @@ def get_games(steamid):
             counter -= 1
             queue.put(current_user)
             continue
+        except e:
+            print e
+            counter -= 1
+            queue.put(current_user)
+            continue
         
         if summaries['response']['players'][0]['communityvisibilitystate'] == 3:
             try:
@@ -48,6 +53,11 @@ def get_games(steamid):
                 continue
             except urllib2.HTTPError, e:
                 print "HTTPError: ", e.code
+                counter -= 1
+                queue.put(current_user)
+                continue
+            except e:
+                print e
                 counter -= 1
                 queue.put(current_user)
                 continue
@@ -66,6 +76,12 @@ def get_games(steamid):
 
             except urllib2.HTTPError, e:
                 print "HTTPError: ", e.code
+                counter -= 1
+                queue.put(current_user)
+                continue
+
+            except e:
+                print e
                 counter -= 1
                 queue.put(current_user)
                 continue
