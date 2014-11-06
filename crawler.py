@@ -3,6 +3,7 @@ import json
 import Queue
 import time
 import random
+import sys
 
 api_key = open('api_key.txt')
 key = api_key.read()
@@ -35,7 +36,8 @@ def get_games(steamid):
             print "User ID:", current_user
             queue.put(current_user)
             continue
-        except e:
+        except:
+            e = sys.exc_info()[0]
             print e
             print "User ID:", current_user
             queue.put(current_user)
@@ -54,7 +56,8 @@ def get_games(steamid):
                 print "User ID:", current_user
                 queue.put(current_user)
                 continue
-            except e:
+            except:
+                e = sys.exc_info()[0]
                 print e
                 print "User ID:", current_user
                 queue.put(current_user)
@@ -80,7 +83,8 @@ def get_games(steamid):
                 queue.put(current_user)
                 continue
 
-            except e:
+            except:
+                e = sys.exc_info()[0]
                 print e
                 print "User ID:", current_user
                 queue.put(current_user)
