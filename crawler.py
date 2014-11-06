@@ -20,26 +20,24 @@ def get_games(steamid):
     counter = len(user_set)
     while not queue.empty():
         dictionary_file = open('dictionary.txt', 'a')
-        
         current_user = str(queue.get())
-        print current_user, counter
-        counter += 1
+
         try:
             summaries = json.loads(urllib2.urlopen(getSummaries + key + '&steamids=' + current_user + '&format=json', timeout = 10).read())
         except urllib2.URLError, e:
             print "URLError: ", e.reason
-            counter -= 1
+            print "User ID:", current_user
             queue.put(current_user)
             continue
 
         except urllib2.HTTPError, e:
             print "HTTPError: ", e.code
-            counter -= 1
+            print "User ID:", current_user
             queue.put(current_user)
             continue
         except e:
             print e
-            counter -= 1
+            print "User ID:", current_user
             queue.put(current_user)
             continue
         
@@ -48,41 +46,43 @@ def get_games(steamid):
                 owned_games = json.loads(urllib2.urlopen(getOwnedGames + key + '&steamid=' + current_user + '&include_played_free_games=1&format=json', timeout = 10).read())
             except urllib2.URLError, e:
                 print "URLError: ", e.reason
-                counter -= 1
+                print "User ID:", current_user
                 queue.put(current_user)
                 continue
             except urllib2.HTTPError, e:
                 print "HTTPError: ", e.code
-                counter -= 1
+                print "User ID:", current_user
                 queue.put(current_user)
                 continue
             except e:
                 print e
-                counter -= 1
+                print "User ID:", current_user
                 queue.put(current_user)
                 continue
-            
+
             user_owned_games[current_user] = owned_games
             dictionary_file.write(str(current_user) + ' ' + str(owned_games) + '\n')
             dictionary_file.close()
+            counter += 1
+            print current_user, counter
 
             try:
                 friend_list = json.loads(urllib2.urlopen(getFriendsList + key + '&steamid=' + current_user + '&format=json', timeout = 10).read())
             except urllib2.URLError, e:
                 print "URLError: ", e.reason
-                counter -= 1
+                print "User ID:", current_user
                 queue.put(current_user)
                 continue
 
             except urllib2.HTTPError, e:
                 print "HTTPError: ", e.code
-                counter -= 1
+                print "User ID:", current_user
                 queue.put(current_user)
                 continue
 
             except e:
                 print e
-                counter -= 1
+                print "User ID:", current_user
                 queue.put(current_user)
                 continue
             
@@ -101,10 +101,12 @@ def get_games(steamid):
 
 
 def main():
+    seed = '76561198129321156'
     try:
         queue_file = open('queue.txt', 'r')
         for line in queue_file:
             queue.put(line[:17])
+        seed = line[:17]
         queue_file.close()
 
         global user_set
@@ -115,6 +117,6 @@ def main():
     except IOError, e:
         pass
     #seed is duplicated
-    get_games('76561198129321156')
+    get_games(seed)
 
 main()
