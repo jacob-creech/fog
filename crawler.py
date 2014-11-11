@@ -8,16 +8,15 @@ import sys
 api_key = open('api_key.txt')
 key = api_key.read()
 api_key.close()
-getOwnedGames = 'http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key='
-getFriendsList = 'http://api.steampowered.com/ISteamUser/GetFriendList/v0001/?key='
 getSummaries = 'http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key='
+getOwnedGames = 'http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key='
+#getFriendsList = 'http://api.steampowered.com/ISteamUser/GetFriendList/v0001/?key='
 queue = Queue.Queue()
-user_set = []
-user_owned_games = {}
+counter = 0
 
 
 def get_games():
-    counter = len(user_set)
+    global counter
     while not queue.empty():
         current_user = str(queue.get())
         try:
@@ -38,7 +37,7 @@ def get_games():
             print "User ID:", current_user
             queue.put(current_user)
             continue
-            
+
         if 'response' in summaries and 'players' in summaries['response'] and len(summaries['response']['players']) > 0 and 'communityvisibilitystate' in summaries['response']['players'][0]:
             if summaries['response']['players'][0]['communityvisibilitystate'] == 3:
                 try:
@@ -60,7 +59,7 @@ def get_games():
                     queue.put(current_user)
                     continue
 
-                user_owned_games[current_user] = owned_games
+                #user_owned_games[current_user] = owned_games
                 dictionary_file = open('dictionary.txt', 'a')
                 dictionary_file.write(str(current_user) + ' ' + str(owned_games) + '\n')
                 dictionary_file.close()
@@ -109,10 +108,10 @@ def main():
             queue.put(line[:17])
         queue_file.close()
 
-        global user_set
+        global counter
         dict_file = open('dictionary.txt', 'r')
         for line in dict_file:
-            user_set += [line[:17]]
+            counter += 1
         dict_file.close()
     except IOError, e:
         pass
