@@ -14,6 +14,20 @@ game_mapping = {}
 orig_matrix = []
 
 
+def read():
+    global user_game_dict
+    dict_file = open("dictionary_first_crawl.txt", "r")
+    count = 0
+    for line in dict_file:
+        line = re.sub('u', '', line)
+        line = re.sub('\'', '\"', line)
+        dataset = json.loads(line[18:])
+        user_game_dict[line[:17]] = dataset
+        if count == 5:
+            break
+        count += 1
+
+
 def map_users():
     global user_mapping
     for i, user in enumerate(sorted(user_averages.keys())):
@@ -26,12 +40,11 @@ def map_games():
         game_mapping[game] = i
 
 
-def svd():
+def build_matrix():
     global user_game_dict
     global user_averages
     global game_averages
     global orig_matrix
-    orig_matrix = []
     user_avg_keys = sorted(user_averages.keys())
     game_avg_keys = sorted(game_averages.keys())
 
@@ -44,12 +57,33 @@ def svd():
     for i, user in enumerate(user_avg_keys):
         gameids = user_averages[user].keys()
         for game in gameids:
-            orig_matrix[i][game_mapping[game]] = user_averages[user][game]
+            if game in game_mapping:
+                orig_matrix[i][game_mapping[game]] = user_averages[user][game]
 
+
+def svd():
+    global orig_matrix
+    print orig_matrix
+    print
+    print
     u, s, v = numpy.linalg.svd(orig_matrix, full_matrices=False)
     composite = numpy.dot(numpy.dot(u, numpy.diag(s)), v)
+    return composite[len(composite) - 1]
 
-    return composite
+
+def calc_local_average(user, games):
+    global user_averages
+    user_total_hours = 0
+    ratings_sum = 0
+    user_averages[user] = {}
+    for game in games:
+        user_total_hours += game['playtime_forever']
+    for game in games:
+        if user_total_hours != 0:
+            local_average = game['playtime_forever']/float(user_total_hours)
+            ratings_sum += local_average
+            user_averages[user][game['appid']] = local_average
+    return ratings_sum / len(games)
 
 
 def global_average():
@@ -63,7 +97,6 @@ def global_average():
         user_averages[user] = {}
     for user in user_game_dict:
         user_total_hours = 0
-        game_hours = 0
         # for each game in the user's gamelist
         if 'games' in user_game_dict[user]['response']:
             # add up total hours of playtime that a user has first
@@ -73,33 +106,27 @@ def global_average():
                 user_total_hours += game['playtime_forever']
             # Then get the local averages per game, per user
             for game in user_game_dict[user]['response']['games']:
-                game_hours = game['playtime_forever']
                 # Calculate local average
                 if user_total_hours != 0:
-                    local_average = game_hours/float(user_total_hours)
+                    local_average = game['playtime_forever']/float(user_total_hours)
                     user_averages[user][game['appid']] = local_average
                     # Add each local average to global total
                     game_averages[game['appid']] = game_averages.get(game['appid'], 0) + local_average
     for appid in game_averages:
+
         game_averages[appid] /= game_user[appid]
 
-    return game_averages
+    game_sum = 0
+    for game in game_averages:
+        game_sum += game_averages[game]
+
+    return game_sum / len(game_averages)
 
 
 def main():
-    global user_game_dict
-    dict_file = open("dictionary_first_crawl.txt", "r")
-    count = 0
-    for line in dict_file:
-        line = re.sub('u', '', line)
-        line = re.sub('\'', '\"', line)
-        dataset = json.loads(line[18:])
-        user_game_dict[line[:17]] = dataset
-        if count == 5:
-            break
-        count += 1
+    read()
     global_average()
     map_users()
     map_games()
-    print svd()
+    svd()
 #main()
