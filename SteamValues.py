@@ -57,14 +57,12 @@ def build_matrix():
                 orig_matrix[i][game_mapping[game]] = user_averages[user][game]
 
 
-def svd():
+def svd(user_id):
     global orig_matrix
-    print orig_matrix
-    print
-    print
+    index_val = user_mapping[user_id]
     u, s, v = numpy.linalg.svd(orig_matrix, full_matrices=False)
     composite = numpy.dot(numpy.dot(u, numpy.diag(s)), v)
-    return composite[len(composite) - 1]
+    return composite[index_val]
 
 
 def calc_local_average(user, games):
