@@ -17,15 +17,11 @@ orig_matrix = []
 def read():
     global user_game_dict
     dict_file = open("dictionary_first_crawl.txt", "r")
-    count = 0
     for line in dict_file:
         line = re.sub('u', '', line)
         line = re.sub('\'', '\"', line)
         dataset = json.loads(line[18:])
         user_game_dict[line[:17]] = dataset
-        if count == 5:
-            break
-        count += 1
 
 
 def map_users():
