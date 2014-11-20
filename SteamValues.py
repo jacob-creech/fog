@@ -16,7 +16,7 @@ orig_matrix = []
 
 def read():
     global user_game_dict
-    dict_file = open("dictionary_first_crawl.txt", "r")
+    dict_file = open("dataset.txt", "r")
     for line in dict_file:
         line = re.sub('u', '', line)
         line = re.sub('\'', '\"', line)
