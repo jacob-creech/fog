@@ -63,7 +63,8 @@ def get_hours(steam_64_id):
 def main():
     steam_64_id = raw_input('Enter a Steam 64 ID: ')
     games = get_hours(steam_64_id)['response']['games']
-
+    alpha = .2
+    beta = 1 - alpha
     steam_val.read()
     overall_user_rating = steam_val.calc_local_average(steam_64_id, games)
     overall_rating = steam_val.global_average()
@@ -72,13 +73,24 @@ def main():
     steam_val.build_matrix()
     #print steam_val.svd()
 
+    svd_score_list =  steam_val.svd(steam_64_id)
+    svd_scores = {}
     user_deviation = overall_user_rating - overall_rating
     for game in steam_val.game_averages:
         game_deviation = steam_val.game_averages[game] - overall_rating
-        if game in steam_val.user_averages[steam_64_id] and steam_val.user_averages[steam_64_id][game] == 0:
-            steam_val.user_averages[steam_64_id][game] = overall_rating + game_deviation + user_deviation
+        svd_scores[game] = svd_score_list[steam_val.game_mapping[game]]
+        if game in steam_val.game_averages:
+        	if game not in steam_val.user_averages[steam_64_id]:
+        		steam_val.user_averages[steam_64_id][game] = 0
+        	if steam_val.user_averages[steam_64_id][game] == 0:
+				steam_val.user_averages[steam_64_id][game] = overall_rating + game_deviation + user_deviation
 
-    for game in sorted(steam_val.user_averages[steam_64_id].iteritems(), key=itemgetter(1), reverse=1)[:20]:
+    user_avg_score = steam_val.user_averages[steam_64_id]
+
+    final_scores = {}
+    for game in steam_val.game_averages:
+    	final_scores[game] = svd_scores[game]*alpha + user_avg_score[game]*beta
+    for game in sorted(final_scores.iteritems(), key=itemgetter(1), reverse=1)[:20]:
         print game[0], game[1]
 
 main()
