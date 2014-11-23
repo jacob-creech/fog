@@ -16,7 +16,7 @@ def get_hours(steam_64_id):
     try_count = 0
     summaries = {}
     while not received_summaries:
-        if try_count >= 10:
+        if try_count >= 3:
             print 'Error(getSummaries): Steam Server Not Responding...Quiting'
             break
         try:
@@ -40,7 +40,7 @@ def get_hours(steam_64_id):
         try_count = 0
         owned_games = {}
         while not received_games:
-            if try_count >= 10:
+            if try_count >= 3:
                 print 'Error(getOwnedGames): Steam Server Not Responding...Quiting'
                 break
             try:
@@ -61,35 +61,46 @@ def get_hours(steam_64_id):
 
 
 def main():
-    steam_64_id = raw_input('Enter a Steam 64 ID: ')
-    games = get_hours(steam_64_id)['response']['games']
+    #local variables
     alpha = .2
     beta = 1 - alpha
+    steam_64_id = raw_input('Enter a Steam 64 ID: ')
+
+    #store user info
+    user_games = {}
+    global_avg_scores = {}
+    for game_dict in get_hours(steam_64_id)['response']['games']:
+        user_games[game_dict['appid']] = game_dict['playtime_forever']
+        global_avg_scores[game_dict['appid']] = game_dict['playtime_forever']
+
+    #load the database and calculate global_average scores
     steam_val.read()
-    overall_user_rating = steam_val.calc_local_average(steam_64_id, games)
-    overall_rating = steam_val.global_average()
+    overall_user_rating = steam_val.calc_local_average(steam_64_id, user_games)
+    global_rating = steam_val.global_average()
+
+    #map users/games to index values; build svd matrix; calculate svd scores
     steam_val.map_users()
     steam_val.map_games()
     steam_val.build_matrix()
-    #print steam_val.svd()
+    svd_user_scores = steam_val.svd(steam_64_id)
 
-    svd_score_list =  steam_val.svd(steam_64_id)
     svd_scores = {}
-    user_deviation = overall_user_rating - overall_rating
+    user_deviation = overall_user_rating - global_rating
     for game in steam_val.game_averages:
-        game_deviation = steam_val.game_averages[game] - overall_rating
-        svd_scores[game] = svd_score_list[steam_val.game_mapping[game]]
-        if game in steam_val.game_averages:
-        	if game not in steam_val.user_averages[steam_64_id]:
-        		steam_val.user_averages[steam_64_id][game] = 0
-        	if steam_val.user_averages[steam_64_id][game] == 0:
-				steam_val.user_averages[steam_64_id][game] = overall_rating + game_deviation + user_deviation
+        game_deviation = steam_val.game_averages[game] - global_rating
+        # utilize this loop for storing the svd scores
+        svd_scores[game] = svd_user_scores[steam_val.game_mapping[game]]
+        # populate unplayed games for the user and record predicted rating
+        if game not in global_avg_scores:
+            global_avg_scores[game] = 0
+        if global_avg_scores[game] == 0:
+            global_avg_scores[game] = global_rating + game_deviation + user_deviation
 
-    user_avg_score = steam_val.user_averages[steam_64_id]
-
+    # combine svd and global_average; record the recommendations
     final_scores = {}
     for game in steam_val.game_averages:
-    	final_scores[game] = svd_scores[game]*alpha + user_avg_score[game]*beta
+        if game not in user_games or user_games[game] == 0:
+            final_scores[game] = svd_scores[game]*alpha + global_avg_scores[game]*beta
     for game in sorted(final_scores.iteritems(), key=itemgetter(1), reverse=1)[:20]:
         print game[0], game[1]
 

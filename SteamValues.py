@@ -17,11 +17,15 @@ orig_matrix = []
 def read():
     global user_game_dict
     dict_file = open("dataset.txt", "r")
+    count = 0
     for line in dict_file:
+        if count >= 10:
+            break
         line = re.sub('u', '', line)
         line = re.sub('\'', '\"', line)
         dataset = json.loads(line[18:])
         user_game_dict[line[:17]] = dataset
+        count += 1
 
 
 def map_users():
@@ -71,12 +75,12 @@ def calc_local_average(user, games):
     ratings_sum = 0
     user_averages[user] = {}
     for game in games:
-        user_total_hours += game['playtime_forever']
+        user_total_hours += games[game]
     for game in games:
         if user_total_hours != 0:
-            local_average = game['playtime_forever']/float(user_total_hours)
+            local_average = games[game]/float(user_total_hours)
             ratings_sum += local_average
-            user_averages[user][game['appid']] = local_average
+            user_averages[user][game] = local_average
     return ratings_sum / len(games)
 
 
