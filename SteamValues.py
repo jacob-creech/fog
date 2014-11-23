@@ -13,6 +13,53 @@ user_mapping = {}
 game_mapping = {}
 orig_matrix = []
 
+def write_to_files():
+    file_one = open("game_averages", "w")
+    file_one.write(str(game_averages))
+    file_one.close()
+    
+    file_two = open("original_matrix", "w")
+    for row in orig_matrix:
+        file_two.write(str(row) + '\n')
+    file_two.close()
+
+    file_three = open("user_mapping", "w")
+    file_three.write(str(user_mapping))
+    file_three.close()
+
+    file_four = open("game_mapping", "w")
+    file_four.write(str(game_mapping))
+    file_four.close()
+
+    file_five = open("user_averages", "w")
+    file_five.write(str(user_averages))
+    file_five.close()
+
+def read_from_files():
+    global orig_matrix
+    global game_averages
+    global game_mapping
+    global user_averages
+    global user_mapping
+
+    orig_matrix = []
+    for line in open("original_matrix", "r"):
+	    line = line[1:-2]
+	    line = line.split(',')
+	    line = [float(elem) for elem in line]
+	    orig_matrix += [line]
+    
+    file_one = open("game_averages", "r")
+    game_averages = eval(file_one.read())
+
+    file_three = open("user_mapping", "r")
+    user_mapping = eval(file_three.read())
+
+    file_four = open("game_mapping", "r")
+    game_mapping = eval(file_four.read())
+
+    file_five = open("user_averages", "r")
+    user_averages = eval(file_five.read())
 
 def read():
     global user_game_dict
@@ -122,5 +169,10 @@ def main():
     global_average()
     map_users()
     map_games()
-    svd()
-#main()
+    build_matrix()
+    write_to_files()
+    read_from_files()
+    #map_users()
+    #map_games()
+    #svd()
+main()
