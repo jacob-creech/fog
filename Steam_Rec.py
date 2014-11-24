@@ -68,10 +68,8 @@ def main():
 
     #store user info
     user_games = {}
-    global_avg_scores = {}
     for game_dict in get_hours(steam_64_id)['response']['games']:
         user_games[game_dict['appid']] = game_dict['playtime_forever']
-        global_avg_scores[game_dict['appid']] = game_dict['playtime_forever']
 
     #load the database and calculate global_average scores
     steam_val.read()
@@ -85,16 +83,14 @@ def main():
     svd_user_scores = steam_val.svd(steam_64_id)
 
     svd_scores = {}
+    global_avg_scores = {}
     user_deviation = overall_user_rating - global_rating
     for game in steam_val.game_averages:
-        game_deviation = steam_val.game_averages[game] - global_rating
-        # utilize this loop for storing the svd scores
+        # store svd scores
         svd_scores[game] = svd_user_scores[steam_val.game_mapping[game]]
         # populate unplayed games for the user and record predicted rating
-        if game not in global_avg_scores:
-            global_avg_scores[game] = 0
-        if global_avg_scores[game] == 0:
-            global_avg_scores[game] = global_rating + game_deviation + user_deviation
+        game_deviation = steam_val.game_averages[game] - global_rating
+        global_avg_scores[game] = global_rating + game_deviation + user_deviation
 
     # combine svd and global_average; record the recommendations
     final_scores = {}
