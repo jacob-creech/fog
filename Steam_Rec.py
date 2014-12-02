@@ -92,12 +92,26 @@ def main():
         game_deviation = steam_val.game_averages[game] - global_rating
         global_avg_scores[game] = global_rating + game_deviation + user_deviation
 
+    # store appid with game_name
+    game_list_file = open('SteamGameList', 'r')
+    game_list_str = ''
+    game_list_dict = {}
+    for line in game_list_file:
+        game_list_str += line
+    game_list_obj = json.loads(game_list_str.decode('utf-8').encode('ascii', 'ignore'))
+    for game in game_list_obj['applist']['apps']['app']:
+        game_list_dict[game['appid']] = game['name']
+
     # combine svd and global_average; record the recommendations
     final_scores = {}
     for game in steam_val.game_averages:
         if game not in user_games or user_games[game] == 0:
             final_scores[game] = svd_scores[game]*alpha + global_avg_scores[game]*beta
     for game in sorted(final_scores.iteritems(), key=itemgetter(1), reverse=1)[:20]:
-        print game[0], game[1]
+        #print game[0], game[1]
+        game_name = ''
+        if game[0] in game_list_dict:
+            game_name = game_list_dict[game[0]]
+        print '<tr>\n\t<td>', game_name, '</td>\n\t<td> GENRE </td>\n\t<td> PRICE </td>\n</tr>'
 
 main()
