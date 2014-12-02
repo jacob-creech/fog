@@ -64,22 +64,25 @@ def main():
     #local variables
     alpha = .2
     beta = 1 - alpha
+
+    steam_val.read_from_files()
+    
     steam_64_id = raw_input('Enter a Steam 64 ID: ')
 
     #store user info
     user_games = {}
     for game_dict in get_hours(steam_64_id)['response']['games']:
         user_games[game_dict['appid']] = game_dict['playtime_forever']
-
+    
     #load the database and calculate global_average scores
-    steam_val.read()
+    ##steam_val.read()
     overall_user_rating = steam_val.calc_local_average(steam_64_id, user_games)
-    global_rating = steam_val.global_average()
+    global_rating = steam_val.global_rating
 
     #map users/games to index values; build svd matrix; calculate svd scores
-    steam_val.map_users()
-    steam_val.map_games()
-    steam_val.build_matrix()
+    ##steam_val.map_users()
+    ##steam_val.map_games()
+    ##steam_val.build_matrix()
     svd_user_scores = steam_val.svd(steam_64_id)
 
     svd_scores = {}
