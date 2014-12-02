@@ -12,27 +12,38 @@ user_mapping = {}
 # game_mapping[appid][index]
 game_mapping = {}
 orig_matrix = []
+global_rating = 0.0
 
 def write_to_files():
+    print "Writing to game averages..."
     file_one = open("game_averages", "w")
     file_one.write(str(game_averages))
     file_one.close()
-    
+
+    print "Writing to original matrix..."
     file_two = open("original_matrix", "w")
     for row in orig_matrix:
         file_two.write(str(row) + '\n')
     file_two.close()
 
+    print "Writing to user mapping..."
     file_three = open("user_mapping", "w")
     file_three.write(str(user_mapping))
     file_three.close()
 
+    print "Writing to game mapping..."
     file_four = open("game_mapping", "w")
     file_four.write(str(game_mapping))
     file_four.close()
 
+    print "Writing to user averages..."
     file_five = open("user_averages", "w")
     file_five.write(str(user_averages))
+    file_five.close()
+    
+    print "Writing to global rating..."
+    file_five = open("global_rating", "w")
+    file_five.write(str(global_rating))
     file_five.close()
 
 def read_from_files():
@@ -42,24 +53,36 @@ def read_from_files():
     global user_averages
     global user_mapping
 
+    counter = 0
+    
     orig_matrix = []
     for line in open("original_matrix", "r"):
-	    line = line[1:-2]
-	    line = line.split(',')
-	    line = [float(elem) for elem in line]
-	    orig_matrix += [line]
-    
+        print "Reading original matrix @", counter
+        line = line[1:-2]
+        line = line.split(',')
+        line = [float(elem) for elem in line]
+        orig_matrix += [line]
+        counter += 1
+
+    print "Reading game averages"
     file_one = open("game_averages", "r")
     game_averages = eval(file_one.read())
 
+    print "Reading user mapping"
     file_three = open("user_mapping", "r")
     user_mapping = eval(file_three.read())
 
+    print "Reading game_mapping"
     file_four = open("game_mapping", "r")
     game_mapping = eval(file_four.read())
 
+    print "Reading user_averages"
     file_five = open("user_averages", "r")
     user_averages = eval(file_five.read())
+
+    print "Reading global_rating"
+    file_six = open("global_rating", "r")
+    user_averages = eval(file_six.read())
 
 def read():
     global user_game_dict
@@ -135,6 +158,7 @@ def global_average():
     global user_game_dict
     global user_averages
     global game_averages
+    global global_rating
     # game_user[appid][num_of_users]
     game_user = {}
 
@@ -164,8 +188,8 @@ def global_average():
     game_sum = 0
     for game in game_averages:
         game_sum += game_averages[game]
-
-    return game_sum / len(game_averages)
+    
+    global_rating = game_sum / len(game_averages)
 
 
 def main():
@@ -175,7 +199,7 @@ def main():
     map_games()
     build_matrix()
     write_to_files()
-    read_from_files()
+    #read_from_files()
     #map_users()
     #map_games()
     #svd()
