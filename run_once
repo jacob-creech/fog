@@ -1,3 +1,0 @@
-import SteamValues as steam_val
-
-steam_val.main()

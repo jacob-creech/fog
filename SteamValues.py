@@ -19,6 +19,7 @@ game_hours = {}
 game_user = {}
 
 
+# Store values that are reused
 def write_to_files():
     print "Writing to game averages..."
     file_one = open("game_averages", "w")
@@ -62,6 +63,7 @@ def write_to_files():
     file_seven.close()
 
 
+# read in stored values from previous calculations
 def read_from_files():
     global orig_matrix
     global game_averages
@@ -112,32 +114,32 @@ def read_from_files():
     game_user = eval(file_eight.read())
 
 
+# Read in the data set of Steam Users
 def read():
     global user_game_dict
     dict_file = open("dataset.txt", "r")
-    #count = 0
     for line in dict_file:
-        #if count >= 10:
-            #break
         line = re.sub('u', '', line)
         line = re.sub('\'', '\"', line)
         dataset = json.loads(line[18:])
         user_game_dict[line[:17]] = dataset
-        #count += 1
 
 
+# Assign each user an index value
 def map_users():
     global user_mapping
     for i, user in enumerate(sorted(user_averages.keys())):
         user_mapping[user] = i
 
 
+# Assign each game an index value
 def map_games():
     global game_mapping
     for i, game in enumerate(sorted(game_averages.keys())):
         game_mapping[game] = i
 
 
+# create svd input matrix
 def build_matrix():
     global user_game_dict
     global user_averages
@@ -159,6 +161,7 @@ def build_matrix():
                 orig_matrix[i][game_mapping[game]] = user_averages[user][game]
 
 
+# create svd score matrix
 def svd(user_id):
     global orig_matrix
     index_val = user_mapping[user_id]
@@ -167,6 +170,7 @@ def svd(user_id):
     return composite[index_val]
 
 
+# calculate global average values for the queried user
 def calc_local_average(user, games):
     global user_averages
     #user_total_hours = 0
@@ -190,20 +194,19 @@ def global_average():
     global game_hours
     global game_user
 
+    #initializing and finding needed values
     for user in user_game_dict:
         user_averages[user] = {}
         if 'games' in user_game_dict[user]['response']:
             for game in user_game_dict[user]['response']['games']:
+                # add up total hours per game
                 game_hours[game['appid']] = game_hours.get(game['appid'], 0) + game['playtime_forever']
+                # add up number of users per game
+                game_user[game['appid']] = game_user.get(game['appid'], 0) + 1
     for user in user_game_dict:
         #user_total_hours = 0
         # for each game in the user's gamelist
         if 'games' in user_game_dict[user]['response']:
-            # add up total hours of playtime that a user has first
-            for game in user_game_dict[user]['response']['games']:
-                # add up number of users per game
-                game_user[game['appid']] = game_user.get(game['appid'], 0) + 1
-                #user_total_hours += game['playtime_forever']
             # Then get the local averages per game, per user
             for game in user_game_dict[user]['response']['games']:
                 # Calculate local average
@@ -218,16 +221,17 @@ def global_average():
     game_sum = 0
     for game in game_averages:
         game_sum += game_averages[game]
-    
     global_rating = game_sum / len(game_averages)
 
 
-# Only called once to populate the data files
+# Used to populate data files
 def main():
+    print 'Overwrite In Progress...'
     read()
     global_average()
     map_users()
     map_games()
     build_matrix()
     write_to_files()
+    print 'Overwrite Complete!'
 
