@@ -82,7 +82,7 @@ def read_from_files():
 
     print "Reading global_rating"
     file_six = open("global_rating", "r")
-    user_averages = eval(file_six.read())
+    global_rating = eval(file_six.read())
 
 def read():
     global user_game_dict
