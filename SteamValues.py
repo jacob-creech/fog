@@ -13,6 +13,11 @@ user_mapping = {}
 game_mapping = {}
 orig_matrix = []
 global_rating = 0.0
+# game_hours[appid][total_hours_played]
+game_hours = {}
+# game_user[appid][num_of_users]
+game_user = {}
+
 
 def write_to_files():
     print "Writing to game averages..."
@@ -46,12 +51,26 @@ def write_to_files():
     file_five.write(str(global_rating))
     file_five.close()
 
+    print "Writing to game hours..."
+    file_six = open("game_hours", "w")
+    file_six.write(str(game_hours))
+    file_six.close()
+
+    print "Writing to game user..."
+    file_seven = open("game_user", "w")
+    file_seven.write(str(game_user))
+    file_seven.close()
+
+
 def read_from_files():
     global orig_matrix
     global game_averages
     global game_mapping
     global user_averages
     global user_mapping
+    global global_rating
+    global game_hours
+    global game_user
 
     counter = 0
     
@@ -83,6 +102,15 @@ def read_from_files():
     print "Reading global_rating"
     file_six = open("global_rating", "r")
     global_rating = eval(file_six.read())
+
+    print "Reading game_hours"
+    file_seven = open("game_hours", "r")
+    game_hours = eval(file_seven.read())
+
+    print "Reading game_user"
+    file_eight = open("game_user", "r")
+    game_user = eval(file_eight.read())
+
 
 def read():
     global user_game_dict
@@ -141,14 +169,14 @@ def svd(user_id):
 
 def calc_local_average(user, games):
     global user_averages
-    user_total_hours = 0
+    #user_total_hours = 0
     ratings_sum = 0
     user_averages[user] = {}
+    #for game in games:
+        #user_total_hours += games[game]
     for game in games:
-        user_total_hours += games[game]
-    for game in games:
-        if user_total_hours != 0:
-            local_average = games[game]/float(user_total_hours)
+        if games[game] > 0:  # if user_total_hours != 0
+            local_average = games[game] / (game_hours[game] / float(game_user[game]))  # float(user_total_hours)
             ratings_sum += local_average
             user_averages[user][game] = local_average
     return ratings_sum / len(games)
@@ -159,30 +187,32 @@ def global_average():
     global user_averages
     global game_averages
     global global_rating
-    # game_user[appid][num_of_users]
-    game_user = {}
+    global game_hours
+    global game_user
 
     for user in user_game_dict:
         user_averages[user] = {}
+        if 'games' in user_game_dict[user]['response']:
+            for game in user_game_dict[user]['response']['games']:
+                game_hours[game['appid']] = game_hours.get(game['appid'], 0) + game['playtime_forever']
     for user in user_game_dict:
-        user_total_hours = 0
+        #user_total_hours = 0
         # for each game in the user's gamelist
         if 'games' in user_game_dict[user]['response']:
             # add up total hours of playtime that a user has first
             for game in user_game_dict[user]['response']['games']:
                 # add up number of users per game
                 game_user[game['appid']] = game_user.get(game['appid'], 0) + 1
-                user_total_hours += game['playtime_forever']
+                #user_total_hours += game['playtime_forever']
             # Then get the local averages per game, per user
             for game in user_game_dict[user]['response']['games']:
                 # Calculate local average
-                if user_total_hours != 0:
-                    local_average = game['playtime_forever']/float(user_total_hours)
+                if game['playtime_forever'] > 0:  # if user_total_hours != 0
+                    local_average = game['playtime_forever'] / (game_hours[game['appid']] / float(game_user[game['appid']]))  # float(user_total_hours)
                     user_averages[user][game['appid']] = local_average
                     # Add each local average to global total
                     game_averages[game['appid']] = game_averages.get(game['appid'], 0) + local_average
     for appid in game_averages:
-
         game_averages[appid] /= game_user[appid]
 
     game_sum = 0
@@ -192,6 +222,7 @@ def global_average():
     global_rating = game_sum / len(game_averages)
 
 
+# Only called once to populate the data files
 def main():
     read()
     global_average()
@@ -199,8 +230,4 @@ def main():
     map_games()
     build_matrix()
     write_to_files()
-    #read_from_files()
-    #map_users()
-    #map_games()
-    #svd()
-# main()
+
