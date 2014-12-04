@@ -1,6 +1,9 @@
 import json
 import re
 import numpy
+import scipy
+from scipy import sparse
+from scipy.sparse import linalg
 
 user_game_dict = {}
 # user_averages[userid][appid][local_average]
@@ -165,7 +168,7 @@ def build_matrix():
 def svd(user_id):
     global orig_matrix
     index_val = user_mapping[user_id]
-    u, s, v = numpy.linalg.svd(orig_matrix, full_matrices=False)
+    u, s, v = scipy.sparse.linalg.svds(orig_matrix)
     composite = numpy.dot(numpy.dot(u, numpy.diag(s)), v)
     return composite[index_val]
 
