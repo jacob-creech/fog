@@ -75,7 +75,7 @@ def main(steam_64_id):
     # final_scores[appid][combined_score]
     final_scores = {}
 
-    steam_val.read_from_files()
+    #steam_val.read_from_files()
 
     print 'Calculating Results...'
 
@@ -121,7 +121,7 @@ def main(steam_64_id):
         game_name = '---Title Not Found---'
         if game[0] in game_list_dict:
             game_name = game_list_dict[game[0]]
-        output += '<tr>\n\t<td>', game_name, '</td>\n\t<td> GENRE </td>\n\t<td> PRICE </td>\n</tr>'
+        output += '<tr>\n\t<td>'+ str(game_name)+ '</td>\n\t<td> GENRE </td>\n\t<td> PRICE </td>\n</tr>'
     return output
 
 # print main('76561198057195965')
