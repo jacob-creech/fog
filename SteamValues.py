@@ -142,6 +142,26 @@ def map_games():
         game_mapping[game] = i
 
 
+def orig_matrix_add_user(user):
+    global orig_matrix
+    global user_mapping
+    if user not in user_mapping:
+        orig_matrix += [[]]
+        index = len(orig_matrix) - 1
+        for game in sorted(game_averages.keys()):
+            orig_matrix[index] += [0]
+        gameids = user_averages[user].keys()
+        for game in gameids:
+            if game in game_mapping:
+                orig_matrix[index][game_mapping[game]] = user_averages[user][game]
+        user_mapping[user] = index
+    else:
+        gameids = user_averages[user].keys()
+        for game in gameids:
+            if game in game_mapping:
+                orig_matrix[user_mapping[user]][game_mapping[game]] = user_averages[user][game]
+
+
 # create svd input matrix
 def build_matrix():
     global user_game_dict
@@ -182,7 +202,7 @@ def calc_local_average(user, games):
     #for game in games:
         #user_total_hours += games[game]
     for game in games:
-        if games[game] > 0:  # if user_total_hours != 0
+        if games[game] > 0 and game in game_averages:  # if user_total_hours != 0
             local_average = games[game] / (game_hours[game] / float(game_user[game]))  # float(user_total_hours)
             ratings_sum += local_average
             user_averages[user][game] = local_average
