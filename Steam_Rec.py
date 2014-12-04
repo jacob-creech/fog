@@ -122,6 +122,7 @@ def main(steam_64_id):
         if game[0] in game_list_dict:
             game_name = game_list_dict[game[0]]
         output += '<tr><td>' + str(game_name) + '</td><td> GENRE </td><td> PRICE </td></tr>'
+    print 'Calculations Completed...Sending Results to Client'
     return output
 
 # print main('76561198057195965')
