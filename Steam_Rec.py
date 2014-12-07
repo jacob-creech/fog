@@ -83,8 +83,9 @@ def main(steam_64_id):
     print 'Calculating Results...'
 
     #store queried user info
-    for game_dict in get_hours(steam_64_id)['response']['games']:
-        user_games[game_dict['appid']] = game_dict['playtime_forever']
+    if 'games' in get_hours(steam_64_id)['response']:
+        for game_dict in get_hours(steam_64_id)['response']['games']:
+            user_games[game_dict['appid']] = game_dict['playtime_forever']
 
     #calculate global_average values
     overall_user_rating = steam_val.calc_local_average(steam_64_id, user_games)

@@ -2,7 +2,6 @@ import json
 import re
 import numpy
 import scipy
-from scipy import sparse
 from scipy.sparse import linalg
 
 user_game_dict = {}
@@ -128,6 +127,45 @@ def read():
         user_game_dict[line[:17]] = dataset
 
 
+# reduce the data set by aggregating the hours for 'block_size' many users
+def aggregate_users(block_size):
+    global user_game_dict
+    # current_aggregate[appid][(average_hours, num_users)]
+    current_aggregate = {}
+    # temp_user_game_dict[new_user_num][current_aggregate]
+    temp_user_game_dict = {}
+    count = 0
+
+    for user in user_game_dict:
+        if count < block_size:
+            if 'games' in user_game_dict[user]['response']:
+                for game in user_game_dict[user]['response']['games']:
+                    # check for the game and add it or average it with the existing amount
+                    if game['appid'] in current_aggregate:
+                        aggregate = current_aggregate[game['appid']][0]
+                        num = current_aggregate[game['appid']][1]
+                        aggregate = ((aggregate * num) + game['playtime_forever']) / float(num + 1)
+                        num += 1
+                        current_aggregate[game['appid']] = (aggregate, num)
+                    else:
+                        current_aggregate[game['appid']] = (game['playtime_forever'], 1)
+            count += 1
+        else:
+            temp_user_game_dict[str(len(temp_user_game_dict))] = current_aggregate
+            current_aggregate = {}
+            count = 0
+    # add in the last set which was less than block_size
+    if current_aggregate != {}:
+        temp_user_game_dict[str(len(temp_user_game_dict))] = current_aggregate
+
+    # overwrite user_game_dict with the new aggregate data set
+    user_game_dict = {}
+    for user in temp_user_game_dict:
+        user_game_dict[user] = {}
+        for game in temp_user_game_dict[user]:
+            user_game_dict[user][game] = temp_user_game_dict[user][game][0]
+
+
 # Assign each user an index value
 def map_users():
     global user_mapping
@@ -164,7 +202,6 @@ def orig_matrix_add_user(user):
 
 # create svd input matrix
 def build_matrix():
-    global user_game_dict
     global user_averages
     global game_averages
     global orig_matrix
@@ -220,30 +257,24 @@ def global_average():
     #initializing and finding needed values
     for user in user_game_dict:
         user_averages[user] = {}
-        if 'games' in user_game_dict[user]['response']:
-            for game in user_game_dict[user]['response']['games']:
-                # add up total hours per game
-                game_hours[game['appid']] = game_hours.get(game['appid'], 0) + game['playtime_forever']
-                # add up number of users per game
-                game_user[game['appid']] = game_user.get(game['appid'], 0) + 1
+        for appid in user_game_dict[user]:
+            # add up total hours per game
+            game_hours[appid] = game_hours.get(appid, 0) + user_game_dict[user][appid]
+            # add up number of users per game
+            game_user[appid] = game_user.get(appid, 0) + 1
     for user in user_game_dict:
-        #user_total_hours = 0
-        # for each game in the user's gamelist
-        if 'games' in user_game_dict[user]['response']:
             # Then get the local averages per game, per user
-            for game in user_game_dict[user]['response']['games']:
+            for appid in user_game_dict[user]:
                 # Calculate local average
-                if game['playtime_forever'] > 0:  # if user_total_hours != 0
-                    local_average = game['playtime_forever'] / (game_hours[game['appid']] / float(game_user[game['appid']]))  # float(user_total_hours)
-                    user_averages[user][game['appid']] = local_average
+                if user_game_dict[user][appid] > 0:
+                    local_average = user_game_dict[user][appid] / (game_hours[appid] / float(game_user[appid]))
+                    user_averages[user][appid] = local_average
                     # Add each local average to global total
-                    game_averages[game['appid']] = game_averages.get(game['appid'], 0) + local_average
-    #for appid in game_averages:
-    #    game_averages[appid] /= game_user[appid]
+                    game_averages[appid] = game_averages.get(appid, 0) + local_average
 
     game_sum = 0
-    for game in game_averages:
-        game_sum += game_averages[game]
+    for appid in game_averages:
+        game_sum += game_averages[appid]
     global_rating = game_sum / len(game_averages)
 
 
@@ -251,10 +282,17 @@ def global_average():
 def main():
     print 'Overwrite In Progress...'
     read()
+    print 'read Complete!'
+    aggregate_users(100)
+    print 'aggregate_users Complete!'
     global_average()
+    print 'global_average Complete!'
     map_users()
+    print 'map_users Complete!'
     map_games()
+    print 'map_games Complete!'
     build_matrix()
+    print 'build_matrix Complete!'
     write_to_files()
     print 'Overwrite Complete!'
 
