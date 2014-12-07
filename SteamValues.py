@@ -238,8 +238,8 @@ def global_average():
                     user_averages[user][game['appid']] = local_average
                     # Add each local average to global total
                     game_averages[game['appid']] = game_averages.get(game['appid'], 0) + local_average
-    for appid in game_averages:
-        game_averages[appid] /= game_user[appid]
+    #for appid in game_averages:
+    #    game_averages[appid] /= game_user[appid]
 
     game_sum = 0
     for game in game_averages:

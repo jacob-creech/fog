@@ -31,6 +31,7 @@ def get_hours(steam_64_id):
             e = sys.exc_info()[0]
             print 'getSummaries:', e
             print "User ID:", steam_64_id
+            print 'Resending Query...'
             try_count += 1
             continue
         received_summaries = True
@@ -48,12 +49,14 @@ def get_hours(steam_64_id):
             except urllib2.URLError, e:
                 print "URLError(getOwnedGames): ", e.reason
                 print "User ID:", steam_64_id
+                print 'Resending Query...'
                 try_count += 1
                 continue
             except:
                 e = sys.exc_info()[0]
                 print 'getOwnedGames:', e
                 print "User ID:", steam_64_id
+                print 'Resending Query...'
                 try_count += 1
                 continue
             received_games = True
@@ -111,9 +114,27 @@ def main(steam_64_id):
     game_list_file.close()
 
     # combine svd and global_average; record the recommendations
+    normalize_svd_nums = {}
+    normalize_ga_nums = {}
     for game in steam_val.game_averages:
         if game not in user_games or user_games[game] == 0:
-            final_scores[game] = svd_scores[game]*alpha + global_avg_scores[game]*beta
+            normalize_svd_nums[game] = svd_scores[game]
+            normalize_ga_nums[game] = global_avg_scores[game]
+    # Get min and max scores
+    min_score = normalize_ga_nums[min(normalize_ga_nums, key=normalize_ga_nums.get)]
+    max_score = normalize_ga_nums[max(normalize_ga_nums, key=normalize_ga_nums.get)]
+    min_score_svd = normalize_svd_nums[min(normalize_svd_nums, key=normalize_svd_nums.get)]
+    max_score_svd = normalize_svd_nums[max(normalize_svd_nums, key=normalize_svd_nums.get)]
+    for game in normalize_ga_nums:
+        normalize_ga_nums[game] = min_score + normalize_ga_nums[game]
+        normalize_svd_nums[game] = min_score_svd + normalize_svd_nums[game]
+        normalize_ga_nums[game] = (normalize_ga_nums[game] - min_score) / (max_score - min_score)
+        normalize_svd_nums[game] = (normalize_svd_nums[game] - min_score_svd) / (max_score_svd - min_score_svd)
+
+    for game in steam_val.game_averages:
+        if game not in user_games or user_games[game] == 0:
+            final_scores[game] = normalize_svd_nums[game]*alpha + normalize_ga_nums[game]*beta
+
     output = ''
     for game in sorted(final_scores.iteritems(), key=itemgetter(1), reverse=1)[:20]:
         # game[0] -> appid
@@ -121,8 +142,8 @@ def main(steam_64_id):
         game_name = '---Title Not Found---'
         if game[0] in game_list_dict:
             game_name = game_list_dict[game[0]]
-        output += '<tr><td>' + str(game_name) + '</td><td> GENRE </td><td> PRICE </td></tr>'
+        output += '<tr><td>' + str(game_name) + '</td><td> GENRE </td><td> PRICE </td></tr>\n'
     print 'Calculations Completed...Sending Results to Client'
     return output
 
-# print main('76561198057195965')
+# print main('76561198079049320')
