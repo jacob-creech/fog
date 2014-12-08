@@ -1,8 +1,6 @@
 import json
 import re
-import numpy
-import scipy
-from scipy.sparse import linalg
+
 
 user_game_dict = {}
 # user_averages[userid][appid][local_average]
@@ -193,14 +191,6 @@ def build_matrix():
         for game in gameids:
             if game in game_mapping:
                 orig_matrix[i][game_mapping[game]] = user_averages[user][game]
-
-
-# create svd score matrix
-def svd():
-    global orig_matrix
-    u, s, v = scipy.sparse.linalg.svds(orig_matrix)
-    composite = numpy.dot(numpy.dot(u, numpy.diag(s)), v)
-    return composite[-1]
 
 
 def global_average():

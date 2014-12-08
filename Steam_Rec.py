@@ -3,6 +3,9 @@ import json
 import sys
 import SteamValues as sv
 from operator import itemgetter
+import numpy
+import scipy
+from scipy.sparse import linalg
 
 
 def get_hours(steam_64_id):
@@ -96,6 +99,13 @@ def orig_matrix_add_user(user, local_averages):
                 sv.orig_matrix[sv.user_mapping[user]][sv.game_mapping[game]] = local_averages[game]
 
 
+# create svd score matrix
+def svd():
+    u, s, v = scipy.sparse.linalg.svds(sv.orig_matrix)
+    composite = numpy.dot(numpy.dot(u, numpy.diag(s)), v)
+    return composite[-1]
+
+
 def main(steam_64_id):
     print '*****FoG Recommender Running Query*****'
     alpha = 0
@@ -126,7 +136,7 @@ def main(steam_64_id):
 
     #calculate svd matrix
     orig_matrix_add_user(steam_64_id, local_averages)
-    svd_user_scores = sv.svd()
+    svd_user_scores = svd()
 
     #finalize svd and global_avg scores
     user_deviation = overall_user_rating - global_rating
@@ -167,9 +177,7 @@ def main(steam_64_id):
     for game in sv.game_averages:
         if game not in user_games or user_games[game] == 0:
             final_scores[game] = normalize_svd_nums[game]*alpha + normalize_ga_nums[game]*beta
-            print game, '\t', normalize_svd_nums[game], '\t', normalize_ga_nums[game]
-    #for result in sorted(normalize_svd_nums.iteritems(), key=itemgetter(1), reverse=1)[:20]:
-     #   print result
+            #print game, '\t', normalize_svd_nums[game], '\t', normalize_ga_nums[game]
 
     #Record the top 20 results
     output = ''
