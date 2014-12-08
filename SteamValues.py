@@ -44,10 +44,10 @@ def write_to_files():
     file_four.write(str(game_mapping))
     file_four.close()
 
-    print "Writing to user averages..."
+    '''print "Writing to user averages..."
     file_five = open("user_averages", "w")
     file_five.write(str(user_averages))
-    file_five.close()
+    file_five.close()'''
     
     print "Writing to global rating..."
     file_five = open("global_rating", "w")
@@ -70,7 +70,7 @@ def read_from_files():
     global orig_matrix
     global game_averages
     global game_mapping
-    global user_averages
+    #global user_averages
     global user_mapping
     global global_rating
     global game_hours
@@ -99,9 +99,9 @@ def read_from_files():
     file_four = open("game_mapping", "r")
     game_mapping = eval(file_four.read())
 
-    print "Reading user_averages"
+    '''print "Reading user_averages"
     file_five = open("user_averages", "r")
-    user_averages = eval(file_five.read())
+    user_averages = eval(file_five.read())'''
 
     print "Reading global_rating"
     file_six = open("global_rating", "r")
@@ -174,7 +174,7 @@ def map_games():
         game_mapping[game] = i
 
 
-def orig_matrix_add_user(user):
+def orig_matrix_add_user(user, local_averages):
     global orig_matrix
     global user_mapping
     if user not in user_mapping:
@@ -182,16 +182,16 @@ def orig_matrix_add_user(user):
         index = len(orig_matrix) - 1
         for game in sorted(game_averages.keys()):
             orig_matrix[index] += [0]
-        gameids = user_averages[user].keys()
+        gameids = local_averages.keys()
         for game in gameids:
             if game in game_mapping:
-                orig_matrix[index][game_mapping[game]] = user_averages[user][game]
+                orig_matrix[index][game_mapping[game]] = local_averages[game]
         user_mapping[user] = index
     else:
-        gameids = user_averages[user].keys()
+        gameids = local_averages.keys()
         for game in gameids:
             if game in game_mapping:
-                orig_matrix[user_mapping[user]][game_mapping[game]] = user_averages[user][game]
+                orig_matrix[user_mapping[user]][game_mapping[game]] = local_averages[game]
 
 
 # create svd input matrix
@@ -216,28 +216,26 @@ def build_matrix():
 
 
 # create svd score matrix
-def svd(user_id):
+def svd():
     global orig_matrix
-    index_val = user_mapping[user_id]
     u, s, v = scipy.sparse.linalg.svds(orig_matrix)
     composite = numpy.dot(numpy.dot(u, numpy.diag(s)), v)
-    return composite[index_val]
+    return composite[-1]
 
 
 # calculate global average values for the queried user
-def calc_local_average(user, games):
-    global user_averages
+def calc_local_average(games):
     #user_total_hours = 0
     ratings_sum = 0
-    user_averages[user] = {}
+    local_averages = {}
     #for game in games:
         #user_total_hours += games[game]
     for game in games:
         if games[game] > 0 and game in game_averages:  # if user_total_hours != 0
             local_average = games[game] / (game_hours[game] / float(game_user[game]))  # float(user_total_hours)
             ratings_sum += local_average
-            user_averages[user][game] = local_average
-    return ratings_sum / len(games)
+            local_averages[game] = local_average
+    return (ratings_sum / len(games)), local_averages
 
 
 def global_average():
@@ -275,7 +273,7 @@ def global_average():
 # Used to populate data files
 def main():
     print 'Overwrite In Progress...'
-    read("final_dataset.txt", 1000)
+    read("final_dataset.txt", 500)
     print 'read Complete!'
     global_average()
     print 'global_average Complete!'

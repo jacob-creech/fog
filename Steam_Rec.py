@@ -65,7 +65,7 @@ def get_hours(steam_64_id):
 
 def main(steam_64_id):
     print '*****FoG Recommender Running Query*****'
-    alpha = .2
+    alpha = 0
     beta = 1 - alpha
     # user_games[appid][hours]
     user_games = {}
@@ -88,12 +88,12 @@ def main(steam_64_id):
             user_games[game_dict['appid']] = game_dict['playtime_forever']
 
     #calculate global_average values
-    overall_user_rating = steam_val.calc_local_average(steam_64_id, user_games)
+    overall_user_rating, local_averages = steam_val.calc_local_average(user_games)
     global_rating = steam_val.global_rating
 
     #calculate svd matrix
-    steam_val.orig_matrix_add_user(steam_64_id)
-    svd_user_scores = steam_val.svd(steam_64_id)
+    steam_val.orig_matrix_add_user(steam_64_id, local_averages)
+    svd_user_scores = steam_val.svd()
 
     #finalize svd and global_avg scores
     user_deviation = overall_user_rating - global_rating
@@ -137,14 +137,17 @@ def main(steam_64_id):
             final_scores[game] = normalize_svd_nums[game]*alpha + normalize_ga_nums[game]*beta
 
     output = ''
+    image_url_beg = 'cdn.akamai.steamstatic.com/steam/apps/'
+    image_url_end = '/header.jpeg'
     for game in sorted(final_scores.iteritems(), key=itemgetter(1), reverse=1)[:20]:
         # game[0] -> appid
         # game[1] -> score
         game_name = '---Title Not Found---'
         if game[0] in game_list_dict:
             game_name = game_list_dict[game[0]]
-        output += '<tr><td>' + str(game_name) + '</td> <td>GENRE</td> <td>PRICE</td> <td>' + str(game[1]) + '</td></tr>\n'
+        output += '<tr><td><abbr title=\"' + image_url_beg + str(game[0]) + image_url_end + '\">' + str(game_name) + \
+                  '</abbr></td> <td>' + str(game[1]) + '</td></tr>\n'
     print 'Calculations Completed...Sending Results to Client'
     return output
 
-# print main('76561198079049320')
+# print main('76561198053212280')
