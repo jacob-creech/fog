@@ -174,26 +174,6 @@ def map_games():
         game_mapping[game] = i
 
 
-def orig_matrix_add_user(user, local_averages):
-    global orig_matrix
-    global user_mapping
-    if user not in user_mapping:
-        orig_matrix += [[]]
-        index = len(orig_matrix) - 1
-        for game in sorted(game_averages.keys()):
-            orig_matrix[index] += [0]
-        gameids = local_averages.keys()
-        for game in gameids:
-            if game in game_mapping:
-                orig_matrix[index][game_mapping[game]] = local_averages[game]
-        user_mapping[user] = index
-    else:
-        gameids = local_averages.keys()
-        for game in gameids:
-            if game in game_mapping:
-                orig_matrix[user_mapping[user]][game_mapping[game]] = local_averages[game]
-
-
 # create svd input matrix
 def build_matrix():
     global user_averages
@@ -221,21 +201,6 @@ def svd():
     u, s, v = scipy.sparse.linalg.svds(orig_matrix)
     composite = numpy.dot(numpy.dot(u, numpy.diag(s)), v)
     return composite[-1]
-
-
-# calculate global average values for the queried user
-def calc_local_average(games):
-    #user_total_hours = 0
-    ratings_sum = 0
-    local_averages = {}
-    #for game in games:
-        #user_total_hours += games[game]
-    for game in games:
-        if games[game] > 0 and game in game_averages:  # if user_total_hours != 0
-            local_average = games[game] / (game_hours[game] / float(game_user[game]))  # float(user_total_hours)
-            ratings_sum += local_average
-            local_averages[game] = local_average
-    return (ratings_sum / len(games)), local_averages
 
 
 def global_average():
