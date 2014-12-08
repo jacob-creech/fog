@@ -143,7 +143,7 @@ def main(steam_64_id):
         game_name = '---Title Not Found---'
         if game[0] in game_list_dict:
             game_name = game_list_dict[game[0]]
-        output += '<tr><td>' + str(game_name) + '</td><td> GENRE </td><td> PRICE </td></tr>\n'
+        output += '<tr><td>' + str(game_name) + '</td> <td>GENRE</td> <td>PRICE</td> <td>' + str(game[1]) + '</td></tr>\n'
     print 'Calculations Completed...Sending Results to Client'
     return output
 

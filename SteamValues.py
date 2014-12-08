@@ -116,54 +116,48 @@ def read_from_files():
     game_user = eval(file_eight.read())
 
 
-# Read in the data set of Steam Users
-def read():
+# Read in the dataset of Steam Users
+# And reduce the size of the dataset by aggregating the hours for every 'block_size' many users
+def read(file_name, block_size):
     global user_game_dict
-    dict_file = open("dataset.txt", "r")
-    for line in dict_file:
+    # read_game_dict[appid][data]
+    read_game_dict = {}
+    # current_aggregate[appid][(average_hours, num_users)]
+    current_aggregate = {}
+    read_count = 0
+
+    data_file = open(file_name, "r")
+    for line in data_file:
         line = re.sub('u', '', line)
         line = re.sub('\'', '\"', line)
         dataset = json.loads(line[18:])
-        user_game_dict[line[:17]] = dataset
+        read_game_dict[line[:17]] = dataset
+        read_count += 1
 
-
-# reduce the data set by aggregating the hours for 'block_size' many users
-def aggregate_users(block_size):
-    global user_game_dict
-    # current_aggregate[appid][(average_hours, num_users)]
-    current_aggregate = {}
-    # temp_user_game_dict[new_user_num][current_aggregate]
-    temp_user_game_dict = {}
-    count = 0
-
-    for user in user_game_dict:
-        if count < block_size:
-            if 'games' in user_game_dict[user]['response']:
-                for game in user_game_dict[user]['response']['games']:
-                    # check for the game and add it or average it with the existing amount
-                    if game['appid'] in current_aggregate:
-                        aggregate = current_aggregate[game['appid']][0]
-                        num = current_aggregate[game['appid']][1]
-                        aggregate = ((aggregate * num) + game['playtime_forever']) / float(num + 1)
-                        num += 1
-                        current_aggregate[game['appid']] = (aggregate, num)
-                    else:
-                        current_aggregate[game['appid']] = (game['playtime_forever'], 1)
-            count += 1
-        else:
-            temp_user_game_dict[str(len(temp_user_game_dict))] = current_aggregate
+        # if reached the block_size then aggregate those users
+        if read_count >= block_size:
+            for user in read_game_dict:
+                if 'games' in read_game_dict[user]['response']:
+                    for game in read_game_dict[user]['response']['games']:
+                        # check for the game and add it or average it with the existing amount
+                        if game['appid'] in current_aggregate:
+                            aggregate = current_aggregate[game['appid']][0]
+                            num = current_aggregate[game['appid']][1]
+                            aggregate = ((aggregate * num) + game['playtime_forever']) / float(num + 1)
+                            num += 1
+                            current_aggregate[game['appid']] = (aggregate, num)
+                        else:
+                            current_aggregate[game['appid']] = (game['playtime_forever'], 1)
+            user_game_dict[str(len(user_game_dict))] = current_aggregate
+            print 'Read', len(user_game_dict) * block_size, 'users...'
             current_aggregate = {}
-            count = 0
+            read_game_dict = {}
+            read_count = 0
+
     # add in the last set which was less than block_size
     if current_aggregate != {}:
-        temp_user_game_dict[str(len(temp_user_game_dict))] = current_aggregate
-
-    # overwrite user_game_dict with the new aggregate data set
-    user_game_dict = {}
-    for user in temp_user_game_dict:
-        user_game_dict[user] = {}
-        for game in temp_user_game_dict[user]:
-            user_game_dict[user][game] = temp_user_game_dict[user][game][0]
+        user_game_dict[str(len(user_game_dict))] = current_aggregate
+    data_file.close()
 
 
 # Assign each user an index value
@@ -259,15 +253,15 @@ def global_average():
         user_averages[user] = {}
         for appid in user_game_dict[user]:
             # add up total hours per game
-            game_hours[appid] = game_hours.get(appid, 0) + user_game_dict[user][appid]
+            game_hours[appid] = game_hours.get(appid, 0) + user_game_dict[user][appid][0]
             # add up number of users per game
             game_user[appid] = game_user.get(appid, 0) + 1
     for user in user_game_dict:
             # Then get the local averages per game, per user
             for appid in user_game_dict[user]:
                 # Calculate local average
-                if user_game_dict[user][appid] > 0:
-                    local_average = user_game_dict[user][appid] / (game_hours[appid] / float(game_user[appid]))
+                if user_game_dict[user][appid][0] > 0:
+                    local_average = user_game_dict[user][appid][0] / (game_hours[appid] / float(game_user[appid]))
                     user_averages[user][appid] = local_average
                     # Add each local average to global total
                     game_averages[appid] = game_averages.get(appid, 0) + local_average
@@ -281,10 +275,8 @@ def global_average():
 # Used to populate data files
 def main():
     print 'Overwrite In Progress...'
-    read()
+    read("final_dataset.txt", 1000)
     print 'read Complete!'
-    aggregate_users(100)
-    print 'aggregate_users Complete!'
     global_average()
     print 'global_average Complete!'
     map_users()

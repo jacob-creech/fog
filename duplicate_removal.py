@@ -1,18 +1,20 @@
-queue_file = open('queue.txt', 'r')
-queue_file_fixed = open('queue_fixed.txt', 'w')
+cycle_size = int(raw_input('Enter the cycle size: '))
+read_file_name = raw_input('Enter the name of the input file: ')
+write_file_name = raw_input('Enter the name of the output file: ')
+read_file = open(read_file_name, 'r')
+write_file = open(write_file_name, 'w')
 unique_id = []
 count = 1
-cycle_size = int(raw_input('Enter the cycle size: '))
-for line in queue_file:
-    adjusted_line = line[:17]
-    if adjusted_line not in unique_id:
-        unique_id += [adjusted_line]
-        queue_file_fixed.write(adjusted_line + '\n')
+for line in read_file:
+    steam_id = line[:17]
+    if steam_id not in unique_id:
+        unique_id += [steam_id]
+        write_file.write(line)
     if count % cycle_size == 0:
-        print adjusted_line, count
-        queue_file_fixed.close()
-        queue_file_fixed = open('queue_fixed.txt', 'a')
+        print steam_id, count
+        write_file.close()
+        write_file = open(write_file_name, 'a')
         unique_id = []
     count += 1
-queue_file.close()
-queue_file_fixed.close()
+read_file.close()
+write_file.close()
