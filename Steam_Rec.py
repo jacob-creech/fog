@@ -127,14 +127,13 @@ def main(steam_64_id):
     min_score_svd = normalize_svd_nums[min(normalize_svd_nums, key=normalize_svd_nums.get)]
     max_score_svd = normalize_svd_nums[max(normalize_svd_nums, key=normalize_svd_nums.get)]
     for game in normalize_ga_nums:
-        normalize_ga_nums[game] = min_score + normalize_ga_nums[game]
-        normalize_svd_nums[game] = min_score_svd + normalize_svd_nums[game]
         normalize_ga_nums[game] = (normalize_ga_nums[game] - min_score) / (max_score - min_score)
         normalize_svd_nums[game] = (normalize_svd_nums[game] - min_score_svd) / (max_score_svd - min_score_svd)
 
     for game in steam_val.game_averages:
         if game not in user_games or user_games[game] == 0:
             final_scores[game] = normalize_svd_nums[game]*alpha + normalize_ga_nums[game]*beta
+            #print normalize_svd_nums[game], '\t', normalize_ga_nums[game]
 
     output = ''
     image_url_beg = 'cdn.akamai.steamstatic.com/steam/apps/'
@@ -147,6 +146,7 @@ def main(steam_64_id):
             game_name = game_list_dict[game[0]]
         output += '<tr><td><abbr title=\"' + image_url_beg + str(game[0]) + image_url_end + '\">' + str(game_name) + \
                   '</abbr></td> <td>' + str(game[1]) + '</td></tr>\n'
+        #output += str(game_name) + '\n'
     print 'Calculations Completed...Sending Results to Client'
     return output
 
