@@ -83,14 +83,11 @@ def cluster_value(user_games):
 
 # calculate global average values for the queried user
 def calc_local_average(games):
-    #user_total_hours = 0
     ratings_sum = 0
     local_averages = {}
-    #for game in games:
-        #user_total_hours += games[game]
     for game in games:
-        if games[game] > 0 and game in sv.game_averages:  # if user_total_hours != 0
-            local_average = games[game] / (sv.game_hours[game] / float(sv.game_user[game]))  # float(user_total_hours)
+        if games[game] > 0 and game in sv.game_averages:
+            local_average = games[game] / (sv.game_hours[game] / float(sv.game_user[game]))
             ratings_sum += local_average
             local_averages[game] = local_average
     return (ratings_sum / len(games)), local_averages
@@ -121,6 +118,8 @@ def svd():
     return composite[-1]
 
 
+# Run the Recommendation System
+# Note: Only run this code after SteamValues.main runs and generates data files
 def main(steam_64_id):
     print '*****FoG Recommender Running Query*****'
     alpha = .9
@@ -128,7 +127,7 @@ def main(steam_64_id):
     # user_games[appid][hours]
     user_games = {}
     # svd_scores[appid][svd_score]
-    svd_scores = {}
+    #svd_scores = {}
     # global_avg_scores[appid][global_avg_score]
     global_avg_scores = {}
     # game_list_dict[appid][game_name]
@@ -174,7 +173,7 @@ def main(steam_64_id):
         game_list_dict[game['appid']] = game['name']
     game_list_file.close()
 
-    # Normalize svd and ga scores
+    # Normalize cluster and global_average scores
     normalize_cluster_nums = cluster_value(user_games)
     min_avg = global_avg_scores[min(global_avg_scores, key=global_avg_scores.get)]
     max_avg = global_avg_scores[max(global_avg_scores, key=global_avg_scores.get)]
@@ -199,7 +198,7 @@ def main(steam_64_id):
             user_scores[game] = score
 
     # Record the top 20 user owned game score results
-    # '1' is a flag for the location on the web page
+    # '1' is a flag for the data's destination on the web page
     owned_ratings = '1'
     for game in sorted(user_scores.iteritems(), key=itemgetter(1), reverse=1):
         game_name = '---Title Not Found---'
@@ -208,7 +207,7 @@ def main(steam_64_id):
         owned_ratings += game_name + '<br>'
 
     # Record the top 20 recommended results
-    # '0' is a flag for the location on the web page
+    # '0' is a flag for the data's destination on the web page
     top_results = '0'
     image_url_beg = 'http://store.steampowered.com/app/'
     for game in sorted(final_scores.iteritems(), key=itemgetter(1), reverse=1)[:20]:

@@ -228,7 +228,7 @@ def read_from_files():
 
     counter = 0
 
-    orig_matrix = []
+    '''orig_matrix = []
     for line in open("original_matrix", "r"):
         print "Reading original matrix @", counter
         line = line[1:-2]
@@ -237,7 +237,7 @@ def read_from_files():
         for elem in line:
             line2 += [float(elem.strip().strip(']'))]
         orig_matrix += [line2]
-        counter += 1
+        counter += 1'''
 
     print "Reading game averages"
     file_one = open("game_averages", "r")
