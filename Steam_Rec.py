@@ -152,14 +152,14 @@ def main(steam_64_id):
     global_rating = sv.global_rating
 
     #calculate svd matrix
-    orig_matrix_add_user(steam_64_id, local_averages)
-    svd_user_scores = svd()
+    #orig_matrix_add_user(steam_64_id, local_averages)
+    #svd_user_scores = svd()
 
     #finalize svd and global_avg scores
     user_deviation = overall_user_rating - global_rating
     for game in sv.game_averages:
         # map and store svd scores to the appropriate appid
-        svd_scores[game] = svd_user_scores[sv.game_mapping[game]]
+        #svd_scores[game] = svd_user_scores[sv.game_mapping[game]]
         # populate unplayed games for the user and record predicted rating
         game_deviation = sv.game_averages[game] - global_rating
         global_avg_scores[game] = global_rating + game_deviation + user_deviation
