@@ -205,12 +205,12 @@ def main(steam_64_id):
         game_name = '---Title Not Found---'
         if game[0] in game_list_dict:
             game_name = game_list_dict[game[0]]
-        owned_ratings += '<center>' + game_name + '</center>\n'
+        owned_ratings += game_name + '<br>'
 
     # Record the top 20 recommended results
     # '0' is a flag for the location on the web page
     top_results = '0'
-    image_url_beg = 'store.steampowered.com/app/'
+    image_url_beg = 'http://store.steampowered.com/app/'
     for game in sorted(final_scores.iteritems(), key=itemgetter(1), reverse=1)[:20]:
         # game[0] -> appid
         # game[1] -> score

@@ -14,9 +14,10 @@ class EchoWebSocket(tornado.websocket.WebSocketHandler):
         print "WebSocket opened"
 
     def on_message(self, message):
-        print type(message)
+        print 'Recieved', message
         game_list = recommender.main(message)
-        self.write_message(game_list)
+        self.write_message(game_list[0])
+        self.write_message(game_list[1])
         #self.write_message(u"You said: " + message)
 
 
