@@ -68,7 +68,7 @@ def get_hours(steam_64_id):
 
 def cluster_value(user_games):
     cluster_scores = {}
-    for index, game in enumerate(sorted(user_games.iteritems(), key=itemgetter(1), reverse=1)[:20]):
+    for index, game in enumerate(sorted(user_games.iteritems(), key=itemgetter(1), reverse=1)):
         if str(game[0]) in sv.cluster_data:
             for related_game in sv.cluster_data[str(game[0])]:
                 #print related_game
@@ -184,6 +184,8 @@ def main(steam_64_id):
     for game in normalize_cluster_nums:
         normalize_cluster_nums[game] = (normalize_cluster_nums[game] - min_cluster) / float(max_cluster - min_cluster)
         normalize_cluster_nums[game] += .2
+    for game in sorted(normalize_cluster_nums.iteritems(), key=itemgetter(1), reverse=1):
+        print game[0], game[1]
 
     # combine svd and global_average scores
     for game in sv.game_averages:

@@ -83,18 +83,25 @@ def cluster_helper(game1, game2, shared_users):
             elif shared_users > cluster_data[game1][stored_game2] > cluster_data[game1][stored_game1]:
                 cluster_data[game1].pop(stored_game1)
                 cluster_data[game1][game2] = shared_users
+            elif cluster_data[game1][stored_game1] > shared_users > cluster_data[game1][stored_game2]:
+                cluster_data[game1].pop(stored_game2)
+                cluster_data[game1][game2] = shared_users
+            elif cluster_data[game1][stored_game2] > shared_users > cluster_data[game1][stored_game1]:
+                cluster_data[game1].pop(stored_game1)
+                cluster_data[game1][game2] = shared_users
 
 
-def store_cluster_data():
-    cluster_file = open('cluster', 'r')
+def store_cluster_data(file_name):
+    cluster_file = open(file_name, 'r')
     for line in cluster_file:
         game1, game2 = line.split(',')
         game2, shared_users = game2.split('\t')
         game1 = game1[1:]
         game2 = game2[:-1].strip()
         shared_users = int(shared_users.strip())
-        cluster_helper(game1, game2, shared_users)
-        cluster_helper(game2, game1, shared_users)
+        score = shared_users / float(game_user[int(game1)] + game_user[int(game2)])
+        cluster_helper(game1, game2, score)
+        cluster_helper(game2, game1, score)
     cluster_file.close()
 
 
@@ -209,7 +216,7 @@ def write_to_files():
     file_seven.close()
 
     print "Writing to cluster data..."
-    file_eight = open("cluster_data", "w")
+    file_eight = open("cluster_data2", "w")
     file_eight.write(str(cluster_data))
     file_eight.close()
 
@@ -268,7 +275,7 @@ def read_from_files():
     game_user = eval(file_eight.read())
 
     print "Reading cluster_data"
-    file_nine = open("cluster_data", "r")
+    file_nine = open("cluster_data2", "r")
     cluster_data = eval(file_nine.read())
 
 
@@ -277,8 +284,6 @@ def main():
     print 'Overwrite In Progress...'
     read("final_dataset.txt", 500)
     print 'read Complete!'
-    store_cluster_data()
-    print 'cluster_data Complete!'
     global_average()
     print 'global_average Complete!'
     map_users()
@@ -287,6 +292,8 @@ def main():
     print 'map_games Complete!'
     build_matrix()
     print 'build_matrix Complete!'
+    store_cluster_data('cluster2')
+    print 'cluster_data Complete!'
     write_to_files()
     print 'Overwrite Complete!'
 
