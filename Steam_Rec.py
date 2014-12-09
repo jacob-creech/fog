@@ -184,8 +184,6 @@ def main(steam_64_id):
     for game in normalize_cluster_nums:
         normalize_cluster_nums[game] = (normalize_cluster_nums[game] - min_cluster) / float(max_cluster - min_cluster)
         normalize_cluster_nums[game] += .2
-    for game in sorted(normalize_cluster_nums.iteritems(), key=itemgetter(1), reverse=1):
-        print game[0], game[1]
 
     # combine svd and global_average scores
     for game in sv.game_averages:
