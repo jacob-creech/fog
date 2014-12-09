@@ -66,6 +66,21 @@ def get_hours(steam_64_id):
         return owned_games
 
 
+def cluster_value(user_games):
+    cluster_scores = {}
+    for index, game in enumerate(sorted(user_games.iteritems(), key=itemgetter(1), reverse=1)[:20]):
+        if str(game[0]) in sv.cluster_data:
+            for related_game in sv.cluster_data[str(game[0])]:
+                #print related_game
+                if related_game not in cluster_scores:
+                    cluster_scores[related_game] = len(user_games) - index
+                else:
+                    cluster_scores[related_game] += len(user_games) - index
+    #for appid in sorted(cluster_scores.iteritems(), key=itemgetter(1), reverse=1):
+    #    print appid, cluster_scores[appid[0]]
+    return cluster_scores
+
+
 # calculate global average values for the queried user
 def calc_local_average(games):
     #user_total_hours = 0
@@ -108,7 +123,7 @@ def svd():
 
 def main(steam_64_id):
     print '*****FoG Recommender Running Query*****'
-    alpha = 0
+    alpha = .9
     beta = 1 - alpha
     # user_games[appid][hours]
     user_games = {}
@@ -120,6 +135,8 @@ def main(steam_64_id):
     game_list_dict = {}
     # final_scores[appid][combined_score]
     final_scores = {}
+    # user_scores[appid][combined_score]
+    user_scores = {}
 
     #sv.read_from_files()
 
@@ -158,41 +175,55 @@ def main(steam_64_id):
     game_list_file.close()
 
     # Normalize svd and ga scores
-    normalize_svd_nums = {}
-    normalize_ga_nums = {}
-    for game in sv.game_averages:
-        if game not in user_games or user_games[game] == 0:
-            normalize_svd_nums[game] = svd_scores[game]
-            normalize_ga_nums[game] = global_avg_scores[game]
-    # Get min and max scores
-    min_score = normalize_ga_nums[min(normalize_ga_nums, key=normalize_ga_nums.get)]
-    max_score = normalize_ga_nums[max(normalize_ga_nums, key=normalize_ga_nums.get)]
-    min_score_svd = normalize_svd_nums[min(normalize_svd_nums, key=normalize_svd_nums.get)]
-    max_score_svd = normalize_svd_nums[max(normalize_svd_nums, key=normalize_svd_nums.get)]
-    for game in normalize_ga_nums:
-        normalize_ga_nums[game] = (normalize_ga_nums[game] - min_score) / float(max_score - min_score)
-        normalize_svd_nums[game] = (normalize_svd_nums[game] - min_score_svd) / float(max_score_svd - min_score_svd)
+    normalize_cluster_nums = cluster_value(user_games)
+    min_avg = global_avg_scores[min(global_avg_scores, key=global_avg_scores.get)]
+    max_avg = global_avg_scores[max(global_avg_scores, key=global_avg_scores.get)]
+    min_cluster = normalize_cluster_nums[min(normalize_cluster_nums, key=normalize_cluster_nums.get)]
+    max_cluster = normalize_cluster_nums[max(normalize_cluster_nums, key=normalize_cluster_nums.get)]
+    for game in global_avg_scores:
+        global_avg_scores[game] = (global_avg_scores[game] - min_avg) / float(max_avg - min_avg)
+    for game in normalize_cluster_nums:
+        normalize_cluster_nums[game] = (normalize_cluster_nums[game] - min_cluster) / float(max_cluster - min_cluster)
+        normalize_cluster_nums[game] += .2
 
     # combine svd and global_average scores
     for game in sv.game_averages:
+        score = normalize_cluster_nums.get(str(game), 0)*alpha + global_avg_scores[game]*beta
         if game not in user_games or user_games[game] == 0:
-            final_scores[game] = normalize_svd_nums[game]*alpha + normalize_ga_nums[game]*beta
-            #print game, '\t', normalize_svd_nums[game], '\t', normalize_ga_nums[game]
+            # Remove notorious game "Bad Rats"
+            if game == 34900:
+                final_scores[game] = 0
+            else:
+                final_scores[game] = score
+        elif game in user_games:
+            user_scores[game] = score
 
-    #Record the top 20 results
-    output = ''
-    image_url_beg = 'cdn.akamai.steamstatic.com/steam/apps/'
-    image_url_end = '/header.jpeg'
+    # Record the top 20 user owned game score results
+    # '1' is a flag for the location on the web page
+    owned_ratings = '1'
+    for game in sorted(user_scores.iteritems(), key=itemgetter(1), reverse=1):
+        game_name = '---Title Not Found---'
+        if game[0] in game_list_dict:
+            game_name = game_list_dict[game[0]]
+        owned_ratings += '<center>' + game_name + '</center>\n'
+
+    # Record the top 20 recommended results
+    # '0' is a flag for the location on the web page
+    top_results = '0'
+    image_url_beg = 'store.steampowered.com/app/'
     for game in sorted(final_scores.iteritems(), key=itemgetter(1), reverse=1)[:20]:
         # game[0] -> appid
         # game[1] -> score
         game_name = '---Title Not Found---'
         if game[0] in game_list_dict:
             game_name = game_list_dict[game[0]]
-        output += '<tr><td><abbr title=\"' + image_url_beg + str(game[0]) + image_url_end + '\">' + str(game_name) + \
-                  '</abbr></td> <td>' + str(game[1]) + '</td></tr>\n'
-        #output += str(game_name) + ' ' + str(game[1]) + '\n'
-    print 'Calculations Completed...Sending Results to Client'
-    return output
+        top_results += '<tr><td><a href=\"' + image_url_beg + str(game[0]) + '\">' + str(game_name) + \
+                       '</a></td> <td>' + str(game[1]) + '</td></tr>\n'
 
-#print main('76561198053212280')
+    print 'Calculations Completed...Sending Results to Client'
+    return top_results, owned_ratings
+
+#results, user_owned_ratings = main('76561198057195965')
+#print results
+#print
+#print user_owned_ratings
