@@ -1,14 +1,9 @@
 api_key.txt
 dictionary.txt
 queue.txt
-game_averages
 game_mapping
 original_matrix
 SteamValues.pyc
 user_averages
 user_mapping
-global_rating
-game_hours
-game_user
 first_crawl.txt
-cluster_data2

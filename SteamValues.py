@@ -1,26 +1,25 @@
 import json
 import re
-from operator import itemgetter
 
+'''
+    This file is primarily used to pre-calculate the datafiles of most of the global variables.
+    The only global variable not saved is user_game_dict being our primary dataset which is already
+    saved in 'final_dataset.txt'. The only other reason to access this file is from the recommender
+    in order to access the data once loaded from the data files.
+'''
 
+# user_game_dict[arbitrary_index][str(appid)][(aggregate_score, num_users)]
 user_game_dict = {}
-# user_averages[userid][appid][local_average]
-user_averages = {}
 # game_averages[appid][global_average]
 game_averages = {}
-# user_mapping[userid][index]
-user_mapping = {}
-# game_mapping[appid][index]
-game_mapping = {}
-orig_matrix = []
-global_rating = 0.0
 # game_hours[appid][total_hours_played]
 game_hours = {}
 # game_user[appid][num_of_users]
 game_user = {}
 # cluster_data[appid][appid][num_shared_users]
 cluster_data = {}
-
+# average rating across all collected users
+global_rating = 0.0
 
 
 # Read in the dataset of Steam Users
@@ -67,6 +66,7 @@ def read(file_name, block_size):
     data_file.close()
 
 
+# For every game store the top 2 games with highest shared user scores
 def cluster_helper(game1, game2, shared_users):
     global cluster_data
     if game1 not in cluster_data:
@@ -91,6 +91,7 @@ def cluster_helper(game1, game2, shared_users):
                 cluster_data[game1][game2] = shared_users
 
 
+# Pull the 2 games and their shared users from the file and send to cluster_helper
 def store_cluster_data(file_name):
     cluster_file = open(file_name, 'r')
     for line in cluster_file:
@@ -105,9 +106,9 @@ def store_cluster_data(file_name):
     cluster_file.close()
 
 
+# Calculate Baseline Scores
 def global_average():
     global user_game_dict
-    global user_averages
     global game_averages
     global global_rating
     global game_hours
@@ -115,7 +116,6 @@ def global_average():
 
     #initializing and finding needed values
     for user in user_game_dict:
-        user_averages[user] = {}
         for appid in user_game_dict[user]:
             # add up total hours per game
             game_hours[appid] = game_hours.get(appid, 0) + user_game_dict[user][appid][0]
@@ -127,7 +127,6 @@ def global_average():
                 # Calculate local average
                 if user_game_dict[user][appid][0] > 0:
                     local_average = user_game_dict[user][appid][0] / (game_hours[appid] / float(game_user[appid]))
-                    user_averages[user][appid] = local_average
                     # Add each local average to global total
                     game_averages[appid] = game_averages.get(appid, 0) + local_average
 
@@ -137,41 +136,6 @@ def global_average():
     global_rating = game_sum / len(game_averages)
 
 
-# Assign each user an index value
-def map_users():
-    global user_mapping
-    for i, user in enumerate(sorted(user_averages.keys())):
-        user_mapping[user] = i
-
-
-# Assign each game an index value
-def map_games():
-    global game_mapping
-    for i, game in enumerate(sorted(game_averages.keys())):
-        game_mapping[game] = i
-
-
-# create svd input matrix
-def build_matrix():
-    global user_averages
-    global game_averages
-    global orig_matrix
-    user_avg_keys = sorted(user_averages.keys())
-    game_avg_keys = sorted(game_averages.keys())
-
-    # Default all values to Zero
-    for i, user in enumerate(user_avg_keys):
-        orig_matrix += [[]]
-        for game in game_avg_keys:
-            orig_matrix[i] += [0]
-    # Maps previous ratings to matrix
-    for i, user in enumerate(user_avg_keys):
-        gameids = user_averages[user].keys()
-        for game in gameids:
-            if game in game_mapping:
-                orig_matrix[i][game_mapping[game]] = user_averages[user][game]
-
-
 # Store values that are reused
 def write_to_files():
     print "Writing to game averages..."
@@ -179,104 +143,54 @@ def write_to_files():
     file_one.write(str(game_averages))
     file_one.close()
 
-    print "Writing to original matrix..."
-    file_two = open("original_matrix", "w")
-    for row in orig_matrix:
-        file_two.write(str(row) + '\n')
+    print "Writing to global rating..."
+    file_two = open("global_rating", "w")
+    file_two.write(str(global_rating))
     file_two.close()
 
-    print "Writing to user mapping..."
-    file_three = open("user_mapping", "w")
-    file_three.write(str(user_mapping))
+    print "Writing to game hours..."
+    file_three = open("game_hours", "w")
+    file_three.write(str(game_hours))
     file_three.close()
 
-    print "Writing to game mapping..."
-    file_four = open("game_mapping", "w")
-    file_four.write(str(game_mapping))
+    print "Writing to game user..."
+    file_four = open("game_user", "w")
+    file_four.write(str(game_user))
     file_four.close()
 
-    '''print "Writing to user averages..."
-    file_five = open("user_averages", "w")
-    file_five.write(str(user_averages))
-    file_five.close()'''
-
-    print "Writing to global rating..."
-    file_five = open("global_rating", "w")
-    file_five.write(str(global_rating))
-    file_five.close()
-
-    print "Writing to game hours..."
-    file_six = open("game_hours", "w")
-    file_six.write(str(game_hours))
-    file_six.close()
-
-    print "Writing to game user..."
-    file_seven = open("game_user", "w")
-    file_seven.write(str(game_user))
-    file_seven.close()
-
     print "Writing to cluster data..."
-    file_eight = open("cluster_data2", "w")
-    file_eight.write(str(cluster_data))
-    file_eight.close()
+    file_four = open("cluster_data2", "w")
+    file_four.write(str(cluster_data))
+    file_four.close()
 
 
 # read in stored values from previous calculations
 def read_from_files():
-    global orig_matrix
     global game_averages
-    global game_mapping
-    #global user_averages
-    global user_mapping
     global global_rating
     global game_hours
     global game_user
     global cluster_data
 
-    counter = 0
-
-    '''orig_matrix = []
-    for line in open("original_matrix", "r"):
-        print "Reading original matrix @", counter
-        line = line[1:-2]
-        line = line.split(',')
-        line2 = []
-        for elem in line:
-            line2 += [float(elem.strip().strip(']'))]
-        orig_matrix += [line2]
-        counter += 1'''
-
     print "Reading game averages"
     file_one = open("game_averages", "r")
     game_averages = eval(file_one.read())
 
-    print "Reading user mapping"
-    file_three = open("user_mapping", "r")
-    user_mapping = eval(file_three.read())
-
-    print "Reading game_mapping"
-    file_four = open("game_mapping", "r")
-    game_mapping = eval(file_four.read())
-
-    '''print "Reading user_averages"
-    file_five = open("user_averages", "r")
-    user_averages = eval(file_five.read())'''
-
     print "Reading global_rating"
-    file_six = open("global_rating", "r")
-    global_rating = eval(file_six.read())
+    file_two = open("global_rating", "r")
+    global_rating = eval(file_two.read())
 
     print "Reading game_hours"
-    file_seven = open("game_hours", "r")
-    game_hours = eval(file_seven.read())
+    file_three = open("game_hours", "r")
+    game_hours = eval(file_three.read())
 
     print "Reading game_user"
-    file_eight = open("game_user", "r")
-    game_user = eval(file_eight.read())
+    file_four = open("game_user", "r")
+    game_user = eval(file_four.read())
 
     print "Reading cluster_data"
-    file_nine = open("cluster_data2", "r")
-    cluster_data = eval(file_nine.read())
+    file_five = open("cluster_data2", "r")
+    cluster_data = eval(file_five.read())
 
 
 # Used to populate data files
@@ -284,16 +198,15 @@ def main():
     print 'Overwrite In Progress...'
     read("final_dataset.txt", 500)
     print 'read Complete!'
+
+    print 'global_average running...!'
     global_average()
     print 'global_average Complete!'
-    map_users()
-    print 'map_users Complete!'
-    map_games()
-    print 'map_games Complete!'
-    build_matrix()
-    print 'build_matrix Complete!'
+
+    print 'cluster_data running...!'
     store_cluster_data('cluster2')
     print 'cluster_data Complete!'
+    
     write_to_files()
     print 'Overwrite Complete!'
 

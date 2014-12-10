@@ -3,9 +3,18 @@ import json
 import sys
 import SteamValues as sv
 from operator import itemgetter
-import numpy
-import scipy
-from scipy.sparse import linalg
+
+
+'''
+    This is the primary recommender file. The helper function first retrieve the queried user's
+    games and playtime information which are then sent to the other two functions which
+    calculate baseline and cluster values. Our recommender highly favors the cluster results,
+    because they are much fewer and seem to optimize our results.
+
+    Note: some returned score values may appear to be equal (i.e. 0.1) which are the result
+    of python round results such as 0.0999999999, 0.0999999998, 0.0999999997, etc. but these
+    rankings still hold the order of this lost precision.
+'''
 
 
 def get_hours(steam_64_id):
@@ -66,6 +75,7 @@ def get_hours(steam_64_id):
         return owned_games
 
 
+# calculate top cluster values
 def cluster_value(user_games):
     cluster_scores = {}
     for index, game in enumerate(sorted(user_games.iteritems(), key=itemgetter(1), reverse=1)):
@@ -76,8 +86,6 @@ def cluster_value(user_games):
                     cluster_scores[related_game] = len(user_games) - index
                 else:
                     cluster_scores[related_game] += len(user_games) - index
-    #for appid in sorted(cluster_scores.iteritems(), key=itemgetter(1), reverse=1):
-    #    print appid, cluster_scores[appid[0]]
     return cluster_scores
 
 
@@ -93,41 +101,14 @@ def calc_local_average(games):
     return (ratings_sum / len(games)), local_averages
 
 
-def orig_matrix_add_user(user, local_averages):
-    if user not in sv.user_mapping:
-        sv.orig_matrix += [[]]
-        index = len(sv.orig_matrix) - 1
-        for game in sorted(sv.game_averages.keys()):
-            sv.orig_matrix[index] += [0]
-        gameids = local_averages.keys()
-        for game in gameids:
-            if game in sv.game_mapping:
-                sv.orig_matrix[index][sv.game_mapping[game]] = local_averages[game]
-        sv.user_mapping[user] = index
-    else:
-        gameids = local_averages.keys()
-        for game in gameids:
-            if game in sv.game_mapping:
-                sv.orig_matrix[sv.user_mapping[user]][sv.game_mapping[game]] = local_averages[game]
-
-
-# create svd score matrix
-def svd():
-    u, s, v = scipy.sparse.linalg.svds(sv.orig_matrix)
-    composite = numpy.dot(numpy.dot(u, numpy.diag(s)), v)
-    return composite[-1]
-
-
 # Run the Recommendation System
-# Note: Only run this code after SteamValues.main runs and generates data files
+# Note: Only run this code after running run_once.py to generate the data files
 def main(steam_64_id):
     print '*****FoG Recommender Running Query*****'
     alpha = .9
     beta = 1 - alpha
     # user_games[appid][hours]
     user_games = {}
-    # svd_scores[appid][svd_score]
-    #svd_scores = {}
     # global_avg_scores[appid][global_avg_score]
     global_avg_scores = {}
     # game_list_dict[appid][game_name]
@@ -136,8 +117,6 @@ def main(steam_64_id):
     final_scores = {}
     # user_scores[appid][combined_score]
     user_scores = {}
-
-    #sv.read_from_files()
 
     print 'Calculating Results...'
 
@@ -150,15 +129,9 @@ def main(steam_64_id):
     overall_user_rating, local_averages = calc_local_average(user_games)
     global_rating = sv.global_rating
 
-    #calculate svd matrix
-    #orig_matrix_add_user(steam_64_id, local_averages)
-    #svd_user_scores = svd()
-
-    #finalize svd and global_avg scores
+    #finalize global_avg scores
     user_deviation = overall_user_rating - global_rating
     for game in sv.game_averages:
-        # map and store svd scores to the appropriate appid
-        #svd_scores[game] = svd_user_scores[sv.game_mapping[game]]
         # populate unplayed games for the user and record predicted rating
         game_deviation = sv.game_averages[game] - global_rating
         global_avg_scores[game] = global_rating + game_deviation + user_deviation
@@ -185,7 +158,7 @@ def main(steam_64_id):
         normalize_cluster_nums[game] = (normalize_cluster_nums[game] - min_cluster) / float(max_cluster - min_cluster)
         normalize_cluster_nums[game] += .2
 
-    # combine svd and global_average scores
+    # combine cluster and global_average scores
     for game in sv.game_averages:
         score = normalize_cluster_nums.get(str(game), 0)*alpha + global_avg_scores[game]*beta
         if game not in user_games or user_games[game] == 0:
@@ -221,8 +194,3 @@ def main(steam_64_id):
 
     print 'Calculations Completed...Sending Results to Client'
     return top_results, owned_ratings
-
-#results, user_owned_ratings = main('76561198057195965')
-#print results
-#print
-#print user_owned_ratings
